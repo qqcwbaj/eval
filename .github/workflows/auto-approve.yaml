@@ -1,0 +1,42 @@
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      apps_prod: ${{ steps.filter.outputs.apps_prod }}
+      infra: ${{ steps.filter.outputs.infra }}
+
+    steps:
+    - uses: dorny/paths-filter@v2
+      id: filter
+      with:
+        filters: |
+          apps_prod:
+            - 'apps/prod/**'
+          infra:
+            - 'infra/**'
+
+  autoapproved:
+    needs: changes
+    runs-on: ubuntu-latest
+    steps:
+      if: ${{ steps.filter.outputs.apps_prod != true && steps.filter.outputs.infra != true }}
+      - run: echo "auto approved - ${{ needs.changes.outputs.apps_prod }} - ${{ needs.changes.outputs.infra }}"
+
+  notappsprod:
+    needs: changes
+    runs-on: ubuntu-latest
+    steps:
+      if: ${{ steps.filter.outputs.apps_prod == true && steps.filter.outputs.infra != true }}
+      - run: echo "not apps prod - ${{ needs.changes.outputs.apps_prod }} - ${{ needs.changes.outputs.infra }}"
+
+  notinfra:
+    needs: changes
+    runs-on: ubuntu-latest
+    steps:
+      if: ${{ steps.filter.outputs.apps_prod != true && steps.filter.outputs.infra == true }}
+      - run: echo "not infra - ${{ needs.changes.outputs.apps_prod }} - ${{ needs.changes.outputs.infra }}"
